@@ -11,7 +11,7 @@ int state = 0; //sets inital state
 
 
 
-int motorSpeed = .5; //Ranges from 0 to 1 (configure)
+double motorSpeed = .9; //Ranges from 0 to 1 (configure)
 
 
 int motorInput = motorSpeed*255;
@@ -53,6 +53,12 @@ void setup() {
     pinMode(frontEndStop, INPUT);
     state = 0;
     Serial.print("setup");
+    digitalWrite(forwardPin, LOW);
+    digitalWrite(reversePin, LOW);
+
+
+    pinMode(backEndStop, INPUT);
+    pinMode(frontEndStop, INPUT);
 
 
 
@@ -60,9 +66,25 @@ void setup() {
 
 
 void loop() {
-    digitalWrite(forwardPin, HIGH);
-    digitalWrite(reversePin, LOW);
-    digitalWrite(motorPWMPin, 255);
+    digitalWrite(motorPWMPin, motorInput);
+    
+    
+    if(digitalRead(backEndStop) == HIGH && digitalRead(frontEndStop) == LOW){
+        digitalWrite(forwardPin, HIGH);
+        digitalWrite(reversePin, LOW);
+    }
+    else if (digitalRead(frontEndStop) == HIGH && digitalRead(backEndStop) == LOW){
+        digitalWrite(forwardPin, LOW);
+        digitalWrite(reversePin, HIGH);    
+    }
+    else if (digitalRead(frontEndStop) == HIGH && digitalRead(backEndStop) == HIGH){
+        digitalWrite(forwardPin, LOW);
+        digitalWrite(reversePin, LOW);    
+        delay(500);
+    }
+    
+
+
     //delay(1000);
     //stopMotor();
   // put your main code here, to run repeatedly:
