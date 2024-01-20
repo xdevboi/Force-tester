@@ -7,11 +7,16 @@ int backEndStop = 4; //high when reaches position 0
 
 int frontEndStop = 3; //high when reaches max extention
 
-int state = 0; //sets inital state
 
 
+enum State {
+    HOMEING, PUSHING, RESET, END
+};
 
-int motorSpeed = .5; //Ranges from 0 to 1 (configure)
+State state;
+
+
+double motorSpeed = .9; //Ranges from 0 to 1 (configure)
 
 
 int motorInput = motorSpeed*255;
@@ -37,6 +42,18 @@ void runMotor() {
     analogWrite(motorPWMPin, motorInput);
 }
 
+void forwardMotor(){
+    digitalWrite(reversePin, LOW);
+    digitalWrite(forwardPin, HIGH); 
+    runMotor();
+}
+
+void reverseMotor(){
+    digitalWrite(reversePin, HIGH);
+    digitalWrite(forwardPin, LOW); 
+    runMotor();
+}
+
 void stopMotor(){
     analogWrite(motorPWMPin, 0);
     digitalWrite(reversePin, LOW);
@@ -52,8 +69,9 @@ void setup() {
 
     pinMode(backEndStop, INPUT);
     pinMode(frontEndStop, INPUT);
-    state = 0;
+    //state = 0;
     Serial.print("setup");
+    state = HOMEING;
 
 
 
@@ -65,66 +83,61 @@ void loop() {
 
 
 
-  switch(state){
-      case 0: //getting to back position
-      Serial.print("shit ran ong ong");
+    if(state == HOMEING){
+      //Serial.print("shit ran ong ong");
+        reverseMotor();
           
-          if(digitalRead(backEndStop) == HIGH){
-              state = 1;
-              stopMotor();
-              delay(200);
-              Serial.print("shit ran pt 2 ????");
-              break;
-          }
+        if(digitalRead(backEndStop) == HIGH){ //back at home position 
+            state = PUSHING;
+            forwardMotor();
+        }
 
 
-          if(digitalRead(frontEndStop) == HIGH){
-              state = 3;
-              stopMotor();
-              delay(200);
-              Serial.print("Motor polarity is reversed or you need to take the rod off the front limit switch before starting program");
-              break;
-          }
-          
-          digitalWrite(forwardPin, LOW);
-          digitalWrite(reversePin, HIGH);
-          runMotor();
+        if(digitalRead(frontEndStop) == HIGH){
+            state = END;
+            stopMotor();
+            Serial.print("Motor polarity is reversed or you need to take the rod off the front limit switch before starting program");
+            delay(200);
+        }
+        
+        
+        runMotor();
+        }
 
 
               
-      case 1: //pushing the Mouse
+      if(state == PUSHING){
+        forwardMotor();
 
           if(digitalRead(frontEndStop) == HIGH){
-              stopMotor();
-              delay(200);
-              state = 2;
-              break;
+              reverseMotor();
+              state = RESET;
           }
-
-          digitalWrite(forwardPin, HIGH);
-          digitalWrite(reversePin, LOW);
           runMotor();
 
           //add collecting load cell data
+      }
               
           
           
-      case 2: //reset back to 0 extention position
+      if(state == RESET){
 
 
+        reverseMotor();
 
-          if(digitalRead(backEndStop) == HIGH){
-              state = 3;
-              stopMotor();
-              delay(200);
-              break;
-          }
-          
-          digitalWrite(forwardPin, LOW);
-          digitalWrite(reversePin, HIGH);
-          runMotor();
+        if(digitalRead(backEndStop) == HIGH){ //back at home position 
+            state = END;
+            forwardMotor();
+            delay(1500); //gives time to unpress the limit switch
+        }
+        
+        
+        runMotor();
+        
+    }
 
-      case 3:
+      if(state == END){
+        stopMotor();
         exit(0); //ends code
 
   }
